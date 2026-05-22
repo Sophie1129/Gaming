@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="English Vocab Snake", page_icon="🐍", layout="centered")
+st.set_page_config(page_title="7000-Word Master Snake", page_icon="🐍", layout="centered")
 
 # --- 介面樣式 ---
 st.markdown("""
@@ -35,11 +35,11 @@ st.markdown("""
     }
     </style>
     
-    <h1 class='arcade-title'>LEXICAL SNAKE</h1>
-    <p class='arcade-sub'>CRASH THE WALL TO TEST YOUR 7000-WORD VOCABULARY</p>
+    <h1 class='arcade-title'>7000-WORD MASTER</h1>
+    <p class='arcade-sub'>25+ ADVANCED CHALLENGES LOADED // HIT WALLS TO TEST</p>
 """, unsafe_allow_html=True)
 
-# --- 遊戲核心（全英文題目庫） ---
+# --- 遊戲核心（內含 25 題庫） ---
 vocab_snake_html = """
 <!DOCTYPE html>
 <html>
@@ -99,7 +99,7 @@ vocab_snake_html = """
             letter-spacing: 1px;
         }
         .quiz-question {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             margin-bottom: 15px;
             min-height: 55px;
@@ -109,18 +109,21 @@ vocab_snake_html = """
         .quiz-options {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 8px;
+            gap: 6px;
             width: 100%;
         }
         .option-btn {
             background: #1c1a30;
             border: 1px solid #00ffff;
             color: #fff;
-            padding: 8px;
+            padding: 7px;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             font-family: sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .option-btn:active {
             background: #00ffff;
@@ -181,8 +184,8 @@ vocab_snake_html = """
         <canvas id="gameCanvas" width="400" height="400"></canvas>
         
         <div id="vocabModal">
-            <div class="quiz-title">⚠️ WALL HIT! SOLVE TO WRAP:</div>
-            <div class="quiz-question" id="quizQuestion">Loading question...</div>
+            <div class="quiz-title">⚠️ WALL HIT! ANSWER TO PASS:</div>
+            <div class="quiz-question" id="quizQuestion">Loading...</div>
             <div class="quiz-options" id="quizOptions"></div>
         </div>
     </div>
@@ -204,15 +207,33 @@ vocab_snake_html = """
     </div>
 
     <script>
-        // --- 全英文 7000 單字庫 ---
+        // --- 25 大高中必背 7000 單字挑戰庫 ---
         const VOCAB_BANK = [
             { q: "Which word means 'existing or happening at the same time'?", a: "simultaneous", o: ["simultaneous", "spontaneous", "continuous", "obsolete"] },
             { q: "The heavy rain caused ________ damage to the crops in the valley.", a: "considerable", o: ["considerable", "superficial", "artificial", "obvious"] },
             { q: "Which word is a synonym for 'extremely careful about small details'?", a: "meticulous", o: ["meticulous", "arrogant", "indifferent", "ignorant"] },
             { q: "The choice to study abroad was a major ________ in her life.", a: "turning point", o: ["turning point", "compromise", "catastrophe", "coincidence"] },
-            { q: "What is the meaning of the word 'abundant'?", a: "more than enough; plentiful", o: ["more than enough; plentiful", "rare and expensive", "dangerous to health", "old and useless"] },
+            { q: "What is the meaning of the word 'abundant'?", a: "plentiful", o: ["plentiful", "rare", "hazardous", "obsolete"] },
             { q: "Due to the lack of evidence, the police had to ________ the suspect.", a: "release", o: ["release", "arrest", "scrutinize", "accumulate"] },
-            { q: "Which of the following words means 'impossible to avoid'?", a: "inevitable", o: ["inevitable", "flexible", "improbable", "sustainable"] }
+            { q: "Which of the following words means 'impossible to avoid'?", a: "inevitable", o: ["inevitable", "flexible", "improbable", "sustainable"] },
+            { q: "Medical simulation helps students learn without ________ patient safety.", a: "compromising", o: ["compromising", "accelerating", "accumulating", "prospering"] },
+            { q: "To 'evaluate' something means to ________.", a: "judge its value", o: ["judge its value", "ignore its flaws", "destroy completely", "copy exactly"] },
+            { q: "The government took strict measures to ________ the spread of the virus.", a: "contain", o: ["contain", "cherish", "cultivate", "contradict"] },
+            { q: "Which word means 'to change or adjust to suit new conditions'?", a: "adapt", o: ["adapt", "adopt", "adore", "adequate"] },
+            { q: "The internet has become an ________ part of our daily lives.", a: "indispensable", o: ["indispensable", "indifferent", "innocent", "insignificant"] },
+            { q: "She has a ________ memory and can recall events from years ago.", a: "vivid", o: ["vivid", "vague", "vacant", "vulnerable"] },
+            { q: "What is a synonym for 'prosper'?", a: "thrive", o: ["thrive", "perish", "precede", "postpone"] },
+            { q: "The manager praised Leo for his ________ performance in sales.", a: "outstanding", o: ["outstanding", "outdated", "outrageous", "outward"] },
+            { q: "Which word describes something that lasts for only a very short time?", a: "ephemeral", o: ["ephemeral", "eternal", "essential", "eccentric"] },
+            { q: "We must find a ________ solution to protect our environment.", a: "sustainable", o: ["sustainable", "vulnerable", "temporary", "superficial"] },
+            { q: "The sudden loud noise ________ the sleeping baby.", a: "startled", o: ["startled", "soothed", "satisfied", "stimulated"] },
+            { q: "Which word means 'to notice or become aware of something'?", a: "perceive", o: ["perceive", "perish", "persuade", "securing"] },
+            { q: "The historical museum contains many rare and precious ________.", a: "artifacts", o: ["artifacts", "artificials", "appliances", "architects"] },
+            { q: "She is ________ to peanuts, so she has to check food labels carefully.", a: "allergic", o: ["allergic", "alert", "allowed", "alien"] },
+            { q: "What does the word 'reputable' mean?", a: "highly respected", o: ["highly respected", "very repetitive", "untrustworthy", "expensive"] },
+            { q: "The two countries signed a treaty to ________ economic cooperation.", a: "enhance", o: ["enhance", "endanger", "enforce", "encounter"] },
+            { q: "Which word is the opposite of 'pessimistic'?", a: "optimistic", o: ["optimistic", "indifferent", "aggressive", "depressed"] },
+            { q: "The CEO decided to ________ all his energy into the new tech project.", a: "channel", o: ["channel", "challenge", "cherish", "chronicle"] }
         ];
 
         const canvas = document.getElementById("gameCanvas");
@@ -249,7 +270,7 @@ vocab_snake_html = """
             if (quizActive || gameOver) return;
             
             moveSnake();
-            if (checkSelfCollision()) { endGame("Game Over! You bit your tail."); return; }
+            if (checkSelfCollision()) { endGame("Game Over! Bit your own tail."); return; }
             checkFoodConsumption();
             globalHueShift = (globalHueShift + 3) % 360;
             draw();
