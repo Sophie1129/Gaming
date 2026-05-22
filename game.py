@@ -1,9 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Mobile Prism Snake", page_icon="📱", layout="centered")
+st.set_page_config(page_title="Easy Mobile Snake", page_icon="📱", layout="centered")
 
-# --- MOBILE LAYOUT TUNING ---
+# --- LAYOUT STYLE ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -22,12 +22,12 @@ st.markdown("""
     }
     .arcade-sub {
         font-family: 'Share Tech Mono', monospace;
-        color: #666;
+        color: #00ff66;
         text-align: center;
         margin-bottom: 15px;
         font-size: 0.9rem;
+        letter-spacing: 1px;
     }
-    /* Centers our game frame nicely on mobile viewports */
     .mobile-container {
         max-width: 100%;
         margin: 0 auto;
@@ -36,12 +36,12 @@ st.markdown("""
     }
     </style>
     
-    <h1 class='arcade-title'>TOUCH SNAKE</h1>
-    <p class='arcade-sub'>TAP ARROWS BELOW OR SWIPE TO STEER</p>
+    <h1 class='arcade-title'>EASY SNAKE</h1>
+    <p class='arcade-sub'>WALL-WRAP ACTIVE // NO WALL CRASHES!</p>
 """, unsafe_allow_html=True)
 
-# --- GAME ENGINE WITH TOUCH CONTROLS ---
-mobile_snake_html = """
+# --- GAME ENGINE WITH WALL-WRAPPING LOOP ---
+easy_snake_html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -55,7 +55,7 @@ mobile_snake_html = """
             margin: 0;
             overflow: hidden;
             font-family: 'Share Tech Mono', monospace;
-            user-select: none; /* Prevents text selection highlighting on accidental double taps */
+            user-select: none;
             -webkit-user-select: none;
         }
         .hud {
@@ -69,16 +69,14 @@ mobile_snake_html = """
         .screen-wrapper {
             position: relative;
             border-radius: 8px;
-            border: 2px solid #333;
+            border: 2px solid #00ff66; /* Green border to signal it's safe! */
         }
         #gameCanvas {
             background-color: #030307;
             display: block;
-            width: 320px;   /* Fixed crisp size scaled down dynamically for mobile viewports */
+            width: 320px;
             height: 320px;
         }
-        
-        /* VIRTUAL TOUCH D-PAD LAYOUT */
         .dpad {
             margin-top: 15px;
             display: grid;
@@ -89,25 +87,23 @@ mobile_snake_html = """
         }
         .dpad-btn {
             background: #16192b;
-            color: #00ffff;
-            border: 2px solid #00ffff;
+            color: #00ff66;
+            border: 2px solid #00ff66;
             border-radius: 12px;
             font-size: 22px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.1);
             cursor: pointer;
-            /* Prevents long-press context menus pops up on mobile Chrome/Safari */
             -webkit-touch-callout: none; 
         }
         .dpad-btn:active {
-            background: #00ffff;
+            background: #00ff66;
             color: #000;
-            box-shadow: 0 0 15px #00ffff;
+            box-shadow: 0 0 15px #00ff66;
         }
-        /* Keep grid slots blank to arrange layout natively into a cross D-pad shape */
         .empty { pointer-events: none; visibility: hidden; }
 
         .btn-restart {
@@ -130,14 +126,14 @@ mobile_snake_html = """
 
     <div class="hud">
         <div>SCORE: <span id="score">000</span></div>
-        <div>LENGTH: <span id="length" style="color: #00ffff;">3</span></div>
+        <div>LENGTH: <span id="length" style="color: #00ff66;">3</span></div>
     </div>
 
     <div class="screen-wrapper">
         <canvas id="gameCanvas" width="400" height="400"></canvas>
     </div>
     
-    <button id="restartBtn" class="btn-restart" onclick="resetGame()">TAP TO RESTART</button>
+    <button id="restartBtn" class="btn-restart" onclick="resetGame()">PLAY AGAIN</button>
 
     <div class="dpad">
         <div class="empty"></div>
@@ -174,26 +170,36 @@ mobile_snake_html = """
         function startGame() {
             gameOver = false;
             restartBtn.style.display = "none";
-            gameInterval = setInterval(update, 110); // Slightly slower grid cycle to make touch maneuvering manageable
+            gameInterval = setInterval(update, 100);
         }
 
         function update() {
             moveSnake();
-            if (checkCollision()) { endGame(); return; }
+            if (checkSelfCollision()) { endGame(); return; }
             checkFoodConsumption();
             globalHueShift = (globalHueShift + 3) % 360;
             draw();
         }
 
         function moveSnake() {
-            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            let nextX = snake[0].x + dx;
+            let nextY = snake[0].y + dy;
+
+            // --- THE EASY WALL-WRAP LOGIC ---
+            // If snake goes off the edges, wrap its coordinates to the opposite side
+            if (nextX < 0) nextX = tileCount - 1;
+            if (nextX >= tileCount) nextX = 0;
+            if (nextY < 0) nextY = tileCount - 1;
+            if (nextY >= tileCount) nextY = 0;
+
+            const head = {x: nextX, y: nextY};
             snake.unshift(head);
             snake.pop();
         }
 
-        function checkCollision() {
+        function checkSelfCollision() {
             const head = snake[0];
-            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) return true;
+            // Game over only happens if you crash into your OWN body tail segments now!
             for (let i = 1; i < snake.length; i++) {
                 if (snake[i].x === head.x && snake[i].y === head.y) return true;
             }
@@ -220,11 +226,11 @@ mobile_snake_html = """
             ctx.fillStyle = "#030307";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Target Food Element
+            // Food Core
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(food.x * gridSize + 4, food.y * gridSize + 4, gridSize - 8, gridSize - 8);
 
-            // Rendering Chameleon Skin
+            // Rainbow snake tail blocks
             snake.forEach((cell, index) => {
                 let segmentHue = (globalHueShift + (index * 12)) % 360;
                 ctx.fillStyle = `hsl(${segmentHue}, 100%, 60%)`;
@@ -243,7 +249,7 @@ mobile_snake_html = """
             ctx.fillStyle = "#ff3366";
             ctx.font = "bold 28px 'Share Tech Mono'";
             ctx.textAlign = "center";
-            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+            ctx.fillText("WASTED (BIT YOURSELF)", canvas.width / 2, canvas.height / 2);
             restartBtn.style.display = "block";
         }
 
@@ -256,7 +262,6 @@ mobile_snake_html = """
             startGame();
         }
 
-        // CONTROL LOGIC INTERFACE BINDING (Separated to safely map touch and keyboard events simultaneously)
         function changeDirection(dir) {
             if (gameOver) return;
             if (dir === "UP" && dy !== 1)    { dx = 0; dy = -1; }
@@ -265,7 +270,6 @@ mobile_snake_html = """
             if (dir === "RIGHT" && dx !== -1) { dx = 1; dy = 0; }
         }
 
-        // Physical Keyboard Fallback Listeners
         window.addEventListener("keydown", e => {
             if(["Space", " ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
             if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") changeDirection("UP");
@@ -274,7 +278,6 @@ mobile_snake_html = """
             if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") changeDirection("RIGHT");
         });
 
-        // Virtual On-Screen Button Mapping (Uses pointerdown to instantly track clicks/taps without 300ms mobile delay)
         document.getElementById("padUp").addEventListener("pointerdown", () => changeDirection("UP"));
         document.getElementById("padDown").addEventListener("pointerdown", () => changeDirection("DOWN"));
         document.getElementById("padLeft").addEventListener("pointerdown", () => changeDirection("LEFT"));
@@ -286,7 +289,7 @@ mobile_snake_html = """
 </html>
 """
 
-# Render framework adjusting frame size for both Canvas element + Control Grid array height
+# Render Frame layout
 st.markdown('<div class="mobile-container">', unsafe_allow_html=True)
-components.html(mobile_snake_html, height=560)
+components.html(easy_snake_html, height=560)
 st.markdown('</div>', unsafe_allow_html=True)
