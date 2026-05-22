@@ -3,30 +3,48 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="7000-Word Master Snake", page_icon="🐍", layout="centered")
 
-# --- 介面樣式 ---
+# --- UPGRADED HIGH-VISIBILITY HEADER ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap');
     
     .stApp {
         background: #080711;
     }
-    .arcade-title {
-        font-family: sans-serif;
-        font-weight: 900;
+    
+    /* Neon Sign Header Container */
+    .header-box {
+        background: linear-gradient(135deg, #13112c 0%, #0a0916 100%);
+        border: 3px solid #00ffff;
+        border-radius: 16px;
+        padding: 20px 10px;
         text-align: center;
-        font-size: 2.2rem;
-        margin-bottom: 0px;
-        color: #00ffff;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+        margin-bottom: 25px;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1);
     }
+    
+    .arcade-title {
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 900;
+        font-size: 2.6rem;
+        margin: 0;
+        color: #fff;
+        letter-spacing: 2px;
+        /* Intense double neon shadow glow */
+        text-shadow: 0 0 8px #00ffff, 0 0 20px #00ffff, 0 0 30px #0088ff;
+    }
+    
     .arcade-sub {
         font-family: 'Share Tech Mono', monospace;
-        color: #8b949e;
-        text-align: center;
-        margin-bottom: 15px;
-        font-size: 0.9rem;
+        color: #00ffaa;
+        margin-top: 8px;
+        margin-bottom: 0px;
+        font-size: 1rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
     }
+    
     .mobile-container {
         max-width: 100%;
         margin: 0 auto;
@@ -35,11 +53,13 @@ st.markdown("""
     }
     </style>
     
-    <h1 class='arcade-title'>7000-WORD MASTER</h1>
-    <p class='arcade-sub'>25+ ADVANCED CHALLENGES LOADED // HIT WALLS TO TEST</p>
+    <div class="header-box">
+        <h1 class='arcade-title'>LEXI-SNAKE</h1>
+        <p class='arcade-sub'>🎮 7000-WORD VOCABULARY EDITION 🎮</p>
+    </div>
 """, unsafe_allow_html=True)
 
-# --- 遊戲核心（內含 25 題庫） ---
+# --- GAME ENGINE WITH BUILT-IN CORE ---
 vocab_snake_html = """
 <!DOCTYPE html>
 <html>
@@ -77,7 +97,6 @@ vocab_snake_html = """
             height: 320px;
         }
         
-        /* 英文題目視窗 */
         #vocabModal {
             display: none;
             position: absolute;
@@ -130,7 +149,6 @@ vocab_snake_html = """
             color: #000;
         }
 
-        /* 虛擬按鍵 */
         .dpad {
             margin-top: 15px;
             display: grid;
@@ -172,6 +190,7 @@ vocab_snake_html = """
             z-index: 30;
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
 
@@ -207,7 +226,6 @@ vocab_snake_html = """
     </div>
 
     <script>
-        // --- 25 大高中必背 7000 單字挑戰庫 ---
         const VOCAB_BANK = [
             { q: "Which word means 'existing or happening at the same time'?", a: "simultaneous", o: ["simultaneous", "spontaneous", "continuous", "obsolete"] },
             { q: "The heavy rain caused ________ damage to the crops in the valley.", a: "considerable", o: ["considerable", "superficial", "artificial", "obvious"] },
