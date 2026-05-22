@@ -1,9 +1,9 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Edu-Snake Puzzle", page_icon="📖", layout="centered")
+st.set_page_config(page_title="English Vocab Snake", page_icon="🐍", layout="centered")
 
-# --- LAYOUT STYLE ---
+# --- 介面樣式 ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -17,8 +17,8 @@ st.markdown("""
         text-align: center;
         font-size: 2.2rem;
         margin-bottom: 0px;
-        color: #ffaa00;
-        text-shadow: 0 0 10px rgba(255, 170, 0, 0.4);
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
     }
     .arcade-sub {
         font-family: 'Share Tech Mono', monospace;
@@ -35,11 +35,11 @@ st.markdown("""
     }
     </style>
     
-    <h1 class='arcade-title'>LEXI-SNAKE</h1>
-    <p class='arcade-sub'>HIT WALLS TO TRIGGER VOCABULARY GATE PASSES</p>
+    <h1 class='arcade-title'>LEXICAL SNAKE</h1>
+    <p class='arcade-sub'>CRASH THE WALL TO TEST YOUR 7000-WORD VOCABULARY</p>
 """, unsafe_allow_html=True)
 
-# --- GAME ENGINE WITH BUILT-IN HTML VOCAB MODAL ---
+# --- 遊戲核心（全英文題目庫） ---
 vocab_snake_html = """
 <!DOCTYPE html>
 <html>
@@ -68,7 +68,7 @@ vocab_snake_html = """
         .screen-wrapper {
             position: relative;
             border-radius: 8px;
-            border: 2px solid #ffaa00;
+            border: 2px solid #00ffff;
         }
         #gameCanvas {
             background-color: #030307;
@@ -77,9 +77,9 @@ vocab_snake_html = """
             height: 320px;
         }
         
-        /* VOCABULARY MODAL OVERLAY */
+        /* 英文題目視窗 */
         #vocabModal {
-            display: none; /* Hidden by default */
+            display: none;
             position: absolute;
             top: 0; left: 0; width: 320px; height: 320px;
             background: rgba(10, 9, 22, 0.95);
@@ -93,16 +93,18 @@ vocab_snake_html = """
             z-index: 20;
         }
         .quiz-title {
-            color: #ffaa00;
-            font-size: 16px;
+            color: #00ffff;
+            font-size: 13px;
             margin-bottom: 10px;
             letter-spacing: 1px;
         }
         .quiz-question {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 15px;
-            min-height: 45px;
+            min-height: 55px;
+            font-family: sans-serif;
+            line-height: 1.4;
         }
         .quiz-options {
             display: grid;
@@ -112,20 +114,20 @@ vocab_snake_html = """
         }
         .option-btn {
             background: #1c1a30;
-            border: 1px solid #ffaa00;
+            border: 1px solid #00ffff;
             color: #fff;
             padding: 8px;
             border-radius: 6px;
-            font-family: 'Share Tech Mono', monospace;
             font-size: 14px;
             cursor: pointer;
+            font-family: sans-serif;
         }
         .option-btn:active {
-            background: #ffaa00;
+            background: #00ffff;
             color: #000;
         }
 
-        /* CONTROLS */
+        /* 虛擬按鍵 */
         .dpad {
             margin-top: 15px;
             display: grid;
@@ -136,8 +138,8 @@ vocab_snake_html = """
         }
         .dpad-btn {
             background: #16192b;
-            color: #ffaa00;
-            border: 2px solid #ffaa00;
+            color: #00ffff;
+            border: 2px solid #00ffff;
             border-radius: 12px;
             font-size: 22px;
             font-weight: bold;
@@ -148,7 +150,7 @@ vocab_snake_html = """
             -webkit-touch-callout: none; 
         }
         .dpad-btn:active {
-            background: #ffaa00;
+            background: #00ffff;
             color: #000;
         }
         .empty { pointer-events: none; visibility: hidden; }
@@ -159,7 +161,7 @@ vocab_snake_html = """
             background: #fff;
             color: #000;
             border: none;
-            font-family: 'Share Tech Mono', monospace;
+            font-family: sans-serif;
             font-size: 16px;
             font-weight: bold;
             border-radius: 4px;
@@ -167,23 +169,21 @@ vocab_snake_html = """
             z-index: 30;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
 
     <div class="hud">
         <div>SCORE: <span id="score">000</span></div>
-        <div>SNAKE: <span id="length" style="color: #ffaa00;">3</span></div>
+        <div>SNAKE: <span id="length" style="color: #00ffff;">3</span></div>
     </div>
 
     <div class="screen-wrapper">
         <canvas id="gameCanvas" width="400" height="400"></canvas>
         
         <div id="vocabModal">
-            <div class="quiz-title">⚠️ WALL WALL BROKEN! SOLVE TO WRAP:</div>
-            <div class="quiz-question" id="quizQuestion">What does "Benevolent" mean?</div>
-            <div class="quiz-options" id="quizOptions">
-                </div>
+            <div class="quiz-title">⚠️ WALL HIT! SOLVE TO WRAP:</div>
+            <div class="quiz-question" id="quizQuestion">Loading question...</div>
+            <div class="quiz-options" id="quizOptions"></div>
         </div>
     </div>
     
@@ -204,13 +204,15 @@ vocab_snake_html = """
     </div>
 
     <script>
-        // --- VOCABULARY DATABASE ---
+        // --- 全英文 7000 單字庫 ---
         const VOCAB_BANK = [
-            { q: "Which word means 'very generous or kind'?", a: "Magnanimous", o: ["Magnanimous", "Hostile", "Sparse", "Obsolete"] },
-            { q: "What is the definition of 'Ephemeral'?", a: "Short-lived", o: ["Permanent", "Short-lived", "Very heavy", "Frightening"] },
-            { q: "Choose the synonym for 'Meticulous':", a: "Careful", o: ["Careful", "Lazy", "Sloppy", "Angry"] },
-            { q: "What does the word 'Scrutinize' mean?", a: "Examine closely", o: ["Ignore completely", "Examine closely", "Break apart", "Build up"] },
-            { q: "Which word means 'difficult to understand'?", a: "Obscure", o: ["Obscure", "Apparent", "Luminous", "Simple"] }
+            { q: "Which word means 'existing or happening at the same time'?", a: "simultaneous", o: ["simultaneous", "spontaneous", "continuous", "obsolete"] },
+            { q: "The heavy rain caused ________ damage to the crops in the valley.", a: "considerable", o: ["considerable", "superficial", "artificial", "obvious"] },
+            { q: "Which word is a synonym for 'extremely careful about small details'?", a: "meticulous", o: ["meticulous", "arrogant", "indifferent", "ignorant"] },
+            { q: "The choice to study abroad was a major ________ in her life.", a: "turning point", o: ["turning point", "compromise", "catastrophe", "coincidence"] },
+            { q: "What is the meaning of the word 'abundant'?", a: "more than enough; plentiful", o: ["more than enough; plentiful", "rare and expensive", "dangerous to health", "old and useless"] },
+            { q: "Due to the lack of evidence, the police had to ________ the suspect.", a: "release", o: ["release", "arrest", "scrutinize", "accumulate"] },
+            { q: "Which of the following words means 'impossible to avoid'?", a: "inevitable", o: ["inevitable", "flexible", "improbable", "sustainable"] }
         ];
 
         const canvas = document.getElementById("gameCanvas");
@@ -233,7 +235,7 @@ vocab_snake_html = """
         let gameOver = false;
         let quizActive = false;
         let globalHueShift = 0;
-        let pendingWrap = {x: 0, y: 0}; // Remembers where to put the snake after a correct answer
+        let pendingWrap = {x: 0, y: 0};
 
         function startGame() {
             gameOver = false;
@@ -247,7 +249,7 @@ vocab_snake_html = """
             if (quizActive || gameOver) return;
             
             moveSnake();
-            if (checkSelfCollision()) { endGame("WASTED (BIT YOURSELF)"); return; }
+            if (checkSelfCollision()) { endGame("Game Over! You bit your tail."); return; }
             checkFoodConsumption();
             globalHueShift = (globalHueShift + 3) % 360;
             draw();
@@ -257,9 +259,7 @@ vocab_snake_html = """
             let nextX = snake[0].x + dx;
             let nextY = snake[0].y + dy;
 
-            // --- CHECK IF HIT WALL ---
             if (nextX < 0 || nextX >= tileCount || nextY < 0 || nextY >= tileCount) {
-                // Wrap Target Destination Mapping Coordinates
                 let wrapX = nextX;
                 let wrapY = nextY;
                 if (nextX < 0) wrapX = tileCount - 1;
@@ -267,7 +267,6 @@ vocab_snake_html = """
                 if (nextY < 0) wrapY = tileCount - 1;
                 if (nextY >= tileCount) wrapY = 0;
 
-                // Save destination and pause engine to activate quiz UI
                 pendingWrap = { x: wrapX, y: wrapY };
                 triggerVocabQuiz();
                 return;
@@ -280,14 +279,12 @@ vocab_snake_html = """
 
         function triggerVocabQuiz() {
             quizActive = true;
-            clearInterval(gameInterval); // Freeze snake movement
+            clearInterval(gameInterval);
             
-            // Choose random item from vocab set
             let randomQuiz = VOCAB_BANK[Math.floor(Math.random() * VOCAB_BANK.length)];
             quizQuestion.innerText = randomQuiz.q;
-            quizOptions.innerHTML = ""; // Reset old buttons
+            quizOptions.innerHTML = "";
             
-            // Generate shuffling options layout answers dynamically
             randomQuiz.o.forEach(option => {
                 let btn = document.createElement("button");
                 btn.className = "option-btn";
@@ -296,7 +293,7 @@ vocab_snake_html = """
                 quizOptions.appendChild(btn);
             });
             
-            vocabModal.style.display = "flex"; // Show Quiz Window
+            vocabModal.style.display = "flex";
         }
 
         function verifyAnswer(chosen, correct) {
@@ -304,16 +301,12 @@ vocab_snake_html = """
             quizActive = false;
             
             if (chosen === correct) {
-                // SUCCESS: Perform saved coordinate warp operation
                 const head = { x: pendingWrap.x, y: pendingWrap.y };
                 snake.unshift(head);
                 snake.pop();
-                
-                // Resume game loop
                 gameInterval = setInterval(update, 105);
             } else {
-                // FAILURE: Incorrect vocabulary mapping kills run sequence
-                endGame("WRONG ANSWER! GATE LOCKED");
+                endGame("ACCESS DENIED! Wrong Answer.");
             }
         }
 
@@ -345,11 +338,9 @@ vocab_snake_html = """
             ctx.fillStyle = "#030307";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Food Core
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(food.x * gridSize + 4, food.y * gridSize + 4, gridSize - 8, gridSize - 8);
 
-            // Snake Rendering Pass Loops
             snake.forEach((cell, index) => {
                 let segmentHue = (globalHueShift + (index * 12)) % 360;
                 ctx.fillStyle = `hsl(${segmentHue}, 100%, 60%)`;
@@ -366,7 +357,7 @@ vocab_snake_html = """
             ctx.fillStyle = "rgba(0,0,0,0.85)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#ff3366";
-            ctx.font = "bold 24px 'Share Tech Mono'";
+            ctx.font = "bold 20px sans-serif";
             ctx.textAlign = "center";
             ctx.fillText(reasonText, canvas.width / 2, canvas.height / 2);
             restartBtn.style.display = "block";
@@ -408,7 +399,6 @@ vocab_snake_html = """
 </html>
 """
 
-# Render Layout Structure
 st.markdown('<div class="mobile-container">', unsafe_allow_html=True)
 components.html(vocab_snake_html, height=560)
 st.markdown('</div>', unsafe_allow_html=True)
