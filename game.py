@@ -1,3 +1,4 @@
+Python
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -54,7 +55,7 @@ st.markdown("""
     </style>
     
     <div class="header-box">
-        <h1 class='arcade-title'>LEXI-SNAKE</h1>
+        <h1 class='arcade-title'>SNAKE</h1>
         <p class='arcade-sub'>🎮 7000-WORD VOCABULARY EDITION 🎮</p>
     </div>
 """, unsafe_allow_html=True)
