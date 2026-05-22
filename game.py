@@ -56,7 +56,7 @@ st.markdown("""
     
     <div class="header-box">
         <h1 class='arcade-title'>SNAKE</h1>
-        <p class='arcade-sub'>🎮 7000-WORD VOCABULARY EDITION 🎮(By:S)</p>
+        <p class='arcade-sub'>🎮 7000-WORD VOCABULARY EDITION 🎮(By:So)</p>
     </div>
 """, unsafe_allow_html=True)
 
