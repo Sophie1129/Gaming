@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Easy Mobile Snake", page_icon="📱", layout="centered")
+st.set_page_config(page_title="Edu-Snake Puzzle", page_icon="📖", layout="centered")
 
 # --- LAYOUT STYLE ---
 st.markdown("""
@@ -9,7 +9,7 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
     
     .stApp {
-        background: #090a15;
+        background: #080711;
     }
     .arcade-title {
         font-family: sans-serif;
@@ -17,16 +17,15 @@ st.markdown("""
         text-align: center;
         font-size: 2.2rem;
         margin-bottom: 0px;
-        color: #fff;
-        text-shadow: 0 0 10px #00ffff;
+        color: #ffaa00;
+        text-shadow: 0 0 10px rgba(255, 170, 0, 0.4);
     }
     .arcade-sub {
         font-family: 'Share Tech Mono', monospace;
-        color: #00ff66;
+        color: #8b949e;
         text-align: center;
         margin-bottom: 15px;
         font-size: 0.9rem;
-        letter-spacing: 1px;
     }
     .mobile-container {
         max-width: 100%;
@@ -36,12 +35,12 @@ st.markdown("""
     }
     </style>
     
-    <h1 class='arcade-title'>EASY SNAKE</h1>
-    <p class='arcade-sub'>WALL-WRAP ACTIVE // NO WALL CRASHES!</p>
+    <h1 class='arcade-title'>LEXI-SNAKE</h1>
+    <p class='arcade-sub'>HIT WALLS TO TRIGGER VOCABULARY GATE PASSES</p>
 """, unsafe_allow_html=True)
 
-# --- GAME ENGINE WITH WALL-WRAPPING LOOP ---
-easy_snake_html = """
+# --- GAME ENGINE WITH BUILT-IN HTML VOCAB MODAL ---
+vocab_snake_html = """
 <!DOCTYPE html>
 <html>
 <head>
@@ -69,7 +68,7 @@ easy_snake_html = """
         .screen-wrapper {
             position: relative;
             border-radius: 8px;
-            border: 2px solid #00ff66; /* Green border to signal it's safe! */
+            border: 2px solid #ffaa00;
         }
         #gameCanvas {
             background-color: #030307;
@@ -77,6 +76,56 @@ easy_snake_html = """
             width: 320px;
             height: 320px;
         }
+        
+        /* VOCABULARY MODAL OVERLAY */
+        #vocabModal {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 0; left: 0; width: 320px; height: 320px;
+            background: rgba(10, 9, 22, 0.95);
+            box-sizing: border-box;
+            padding: 15px;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            z-index: 20;
+        }
+        .quiz-title {
+            color: #ffaa00;
+            font-size: 16px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .quiz-question {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            min-height: 45px;
+        }
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            width: 100%;
+        }
+        .option-btn {
+            background: #1c1a30;
+            border: 1px solid #ffaa00;
+            color: #fff;
+            padding: 8px;
+            border-radius: 6px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .option-btn:active {
+            background: #ffaa00;
+            color: #000;
+        }
+
+        /* CONTROLS */
         .dpad {
             margin-top: 15px;
             display: grid;
@@ -87,22 +136,20 @@ easy_snake_html = """
         }
         .dpad-btn {
             background: #16192b;
-            color: #00ff66;
-            border: 2px solid #00ff66;
+            color: #ffaa00;
+            border: 2px solid #ffaa00;
             border-radius: 12px;
             font-size: 22px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 10px rgba(0, 255, 102, 0.1);
             cursor: pointer;
             -webkit-touch-callout: none; 
         }
         .dpad-btn:active {
-            background: #00ff66;
+            background: #ffaa00;
             color: #000;
-            box-shadow: 0 0 15px #00ff66;
         }
         .empty { pointer-events: none; visibility: hidden; }
 
@@ -117,7 +164,7 @@ easy_snake_html = """
             font-weight: bold;
             border-radius: 4px;
             display: none;
-            z-index: 10;
+            z-index: 30;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -126,11 +173,18 @@ easy_snake_html = """
 
     <div class="hud">
         <div>SCORE: <span id="score">000</span></div>
-        <div>LENGTH: <span id="length" style="color: #00ff66;">3</span></div>
+        <div>SNAKE: <span id="length" style="color: #ffaa00;">3</span></div>
     </div>
 
     <div class="screen-wrapper">
         <canvas id="gameCanvas" width="400" height="400"></canvas>
+        
+        <div id="vocabModal">
+            <div class="quiz-title">⚠️ WALL WALL BROKEN! SOLVE TO WRAP:</div>
+            <div class="quiz-question" id="quizQuestion">What does "Benevolent" mean?</div>
+            <div class="quiz-options" id="quizOptions">
+                </div>
+        </div>
     </div>
     
     <button id="restartBtn" class="btn-restart" onclick="resetGame()">PLAY AGAIN</button>
@@ -150,11 +204,23 @@ easy_snake_html = """
     </div>
 
     <script>
+        // --- VOCABULARY DATABASE ---
+        const VOCAB_BANK = [
+            { q: "Which word means 'very generous or kind'?", a: "Magnanimous", o: ["Magnanimous", "Hostile", "Sparse", "Obsolete"] },
+            { q: "What is the definition of 'Ephemeral'?", a: "Short-lived", o: ["Permanent", "Short-lived", "Very heavy", "Frightening"] },
+            { q: "Choose the synonym for 'Meticulous':", a: "Careful", o: ["Careful", "Lazy", "Sloppy", "Angry"] },
+            { q: "What does the word 'Scrutinize' mean?", a: "Examine closely", o: ["Ignore completely", "Examine closely", "Break apart", "Build up"] },
+            { q: "Which word means 'difficult to understand'?", a: "Obscure", o: ["Obscure", "Apparent", "Luminous", "Simple"] }
+        ];
+
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("score");
         const lengthElement = document.getElementById("length");
         const restartBtn = document.getElementById("restartBtn");
+        const vocabModal = document.getElementById("vocabModal");
+        const quizQuestion = document.getElementById("quizQuestion");
+        const quizOptions = document.getElementById("quizOptions");
 
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
@@ -165,17 +231,23 @@ easy_snake_html = """
         let score = 0;
         let gameInterval;
         let gameOver = false;
+        let quizActive = false;
         let globalHueShift = 0;
+        let pendingWrap = {x: 0, y: 0}; // Remembers where to put the snake after a correct answer
 
         function startGame() {
             gameOver = false;
+            quizActive = false;
+            vocabModal.style.display = "none";
             restartBtn.style.display = "none";
-            gameInterval = setInterval(update, 100);
+            gameInterval = setInterval(update, 105);
         }
 
         function update() {
+            if (quizActive || gameOver) return;
+            
             moveSnake();
-            if (checkSelfCollision()) { endGame(); return; }
+            if (checkSelfCollision()) { endGame("WASTED (BIT YOURSELF)"); return; }
             checkFoodConsumption();
             globalHueShift = (globalHueShift + 3) % 360;
             draw();
@@ -185,21 +257,68 @@ easy_snake_html = """
             let nextX = snake[0].x + dx;
             let nextY = snake[0].y + dy;
 
-            // --- THE EASY WALL-WRAP LOGIC ---
-            // If snake goes off the edges, wrap its coordinates to the opposite side
-            if (nextX < 0) nextX = tileCount - 1;
-            if (nextX >= tileCount) nextX = 0;
-            if (nextY < 0) nextY = tileCount - 1;
-            if (nextY >= tileCount) nextY = 0;
+            // --- CHECK IF HIT WALL ---
+            if (nextX < 0 || nextX >= tileCount || nextY < 0 || nextY >= tileCount) {
+                // Wrap Target Destination Mapping Coordinates
+                let wrapX = nextX;
+                let wrapY = nextY;
+                if (nextX < 0) wrapX = tileCount - 1;
+                if (nextX >= tileCount) wrapX = 0;
+                if (nextY < 0) wrapY = tileCount - 1;
+                if (nextY >= tileCount) wrapY = 0;
+
+                // Save destination and pause engine to activate quiz UI
+                pendingWrap = { x: wrapX, y: wrapY };
+                triggerVocabQuiz();
+                return;
+            }
 
             const head = {x: nextX, y: nextY};
             snake.unshift(head);
             snake.pop();
         }
 
+        function triggerVocabQuiz() {
+            quizActive = true;
+            clearInterval(gameInterval); // Freeze snake movement
+            
+            // Choose random item from vocab set
+            let randomQuiz = VOCAB_BANK[Math.floor(Math.random() * VOCAB_BANK.length)];
+            quizQuestion.innerText = randomQuiz.q;
+            quizOptions.innerHTML = ""; // Reset old buttons
+            
+            // Generate shuffling options layout answers dynamically
+            randomQuiz.o.forEach(option => {
+                let btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = option;
+                btn.onclick = () => verifyAnswer(option, randomQuiz.a);
+                quizOptions.appendChild(btn);
+            });
+            
+            vocabModal.style.display = "flex"; // Show Quiz Window
+        }
+
+        function verifyAnswer(chosen, correct) {
+            vocabModal.style.display = "none";
+            quizActive = false;
+            
+            if (chosen === correct) {
+                // SUCCESS: Perform saved coordinate warp operation
+                const head = { x: pendingWrap.x, y: pendingWrap.y };
+                snake.unshift(head);
+                snake.pop();
+                
+                // Resume game loop
+                gameInterval = setInterval(update, 105);
+            } else {
+                // FAILURE: Incorrect vocabulary mapping kills run sequence
+                endGame("WRONG ANSWER! GATE LOCKED");
+            }
+        }
+
         function checkSelfCollision() {
             const head = snake[0];
-            // Game over only happens if you crash into your OWN body tail segments now!
             for (let i = 1; i < snake.length; i++) {
                 if (snake[i].x === head.x && snake[i].y === head.y) return true;
             }
@@ -230,7 +349,7 @@ easy_snake_html = """
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(food.x * gridSize + 4, food.y * gridSize + 4, gridSize - 8, gridSize - 8);
 
-            // Rainbow snake tail blocks
+            // Snake Rendering Pass Loops
             snake.forEach((cell, index) => {
                 let segmentHue = (globalHueShift + (index * 12)) % 360;
                 ctx.fillStyle = `hsl(${segmentHue}, 100%, 60%)`;
@@ -241,15 +360,15 @@ easy_snake_html = """
             ctx.shadowBlur = 0;
         }
 
-        function endGame() {
+        function endGame(reasonText) {
             clearInterval(gameInterval);
             gameOver = true;
             ctx.fillStyle = "rgba(0,0,0,0.85)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#ff3366";
-            ctx.font = "bold 28px 'Share Tech Mono'";
+            ctx.font = "bold 24px 'Share Tech Mono'";
             ctx.textAlign = "center";
-            ctx.fillText("WASTED (BIT YOURSELF)", canvas.width / 2, canvas.height / 2);
+            ctx.fillText(reasonText, canvas.width / 2, canvas.height / 2);
             restartBtn.style.display = "block";
         }
 
@@ -263,7 +382,7 @@ easy_snake_html = """
         }
 
         function changeDirection(dir) {
-            if (gameOver) return;
+            if (gameOver || quizActive) return;
             if (dir === "UP" && dy !== 1)    { dx = 0; dy = -1; }
             if (dir === "DOWN" && dy !== -1) { dx = 0; dy = 1; }
             if (dir === "LEFT" && dx !== 1)  { dx = -1; dy = 0; }
@@ -289,7 +408,7 @@ easy_snake_html = """
 </html>
 """
 
-# Render Frame layout
+# Render Layout Structure
 st.markdown('<div class="mobile-container">', unsafe_allow_html=True)
-components.html(easy_snake_html, height=560)
+components.html(vocab_snake_html, height=560)
 st.markdown('</div>', unsafe_allow_html=True)
