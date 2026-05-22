@@ -1,53 +1,51 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Chameleon Snake", page_icon="🌈", layout="centered")
+st.set_page_config(page_title="Mobile Prism Snake", page_icon="📱", layout="centered")
 
-# --- CABINET FRAME CSS ---
+# --- MOBILE LAYOUT TUNING ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Viper+Bite&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
     
     .stApp {
-        background: radial-gradient(circle, #090a15 0%, #020205 100%);
+        background: #090a15;
     }
     .arcade-title {
         font-family: sans-serif;
         font-weight: 900;
-        letter-spacing: 4px;
         text-align: center;
-        font-size: 3rem;
+        font-size: 2.2rem;
         margin-bottom: 0px;
         color: #fff;
-        text-shadow: 0 0 10px #ff007f, 0 0 20px #00ffff;
+        text-shadow: 0 0 10px #00ffff;
     }
     .arcade-sub {
         font-family: 'Share Tech Mono', monospace;
-        color: #888;
+        color: #666;
         text-align: center;
-        margin-bottom: 25px;
-        font-size: 1rem;
+        margin-bottom: 15px;
+        font-size: 0.9rem;
     }
-    .cabinet-frame {
-        background: #05050a;
-        border: 4px dashed #333;
-        border-radius: 20px;
-        padding: 20px;
-        box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
-        max-width: 460px;
+    /* Centers our game frame nicely on mobile viewports */
+    .mobile-container {
+        max-width: 100%;
         margin: 0 auto;
+        display: flex;
+        justify-content: center;
     }
     </style>
     
-    <h1 class='arcade-title'>PRISM SNAKE</h1>
-    <p class='arcade-sub'>WATCH THE SKIN SHIFT COLOR AS YOU EXTEND</p>
+    <h1 class='arcade-title'>TOUCH SNAKE</h1>
+    <p class='arcade-sub'>TAP ARROWS BELOW OR SWIPE TO STEER</p>
 """, unsafe_allow_html=True)
 
-# --- GAME ENGINE WITH RAINBOW JAVASCRIPT MODIFICATION ---
-rainbow_snake_html = """
+# --- GAME ENGINE WITH TOUCH CONTROLS ---
+mobile_snake_html = """
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             background-color: transparent;
@@ -57,37 +55,73 @@ rainbow_snake_html = """
             margin: 0;
             overflow: hidden;
             font-family: 'Share Tech Mono', monospace;
+            user-select: none; /* Prevents text selection highlighting on accidental double taps */
+            -webkit-user-select: none;
+        }
+        .hud {
+            width: 320px;
+            display: flex;
+            justify-content: space-between;
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 8px;
         }
         .screen-wrapper {
             position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 3px solid #333;
+            border-radius: 8px;
+            border: 2px solid #333;
         }
         #gameCanvas {
             background-color: #030307;
             display: block;
+            width: 320px;   /* Fixed crisp size scaled down dynamically for mobile viewports */
+            height: 320px;
         }
-        .hud {
-            width: 400px;
-            display: flex;
-            justify-content: space-between;
-            color: #fff;
-            font-size: 22px;
-            margin-bottom: 12px;
-        }
-        .btn-neon {
+        
+        /* VIRTUAL TOUCH D-PAD LAYOUT */
+        .dpad {
             margin-top: 15px;
-            padding: 10px 25px;
+            display: grid;
+            grid-template-columns: repeat(3, 65px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 8px;
+            justify-content: center;
+        }
+        .dpad-btn {
+            background: #16192b;
+            color: #00ffff;
+            border: 2px solid #00ffff;
+            border-radius: 12px;
+            font-size: 22px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
+            cursor: pointer;
+            /* Prevents long-press context menus pops up on mobile Chrome/Safari */
+            -webkit-touch-callout: none; 
+        }
+        .dpad-btn:active {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 15px #00ffff;
+        }
+        /* Keep grid slots blank to arrange layout natively into a cross D-pad shape */
+        .empty { pointer-events: none; visibility: hidden; }
+
+        .btn-restart {
+            margin-top: 10px;
+            padding: 8px 20px;
             background: #fff;
             color: #000;
             border: none;
             font-family: 'Share Tech Mono', monospace;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            cursor: pointer;
             border-radius: 4px;
             display: none;
+            z-index: 10;
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
@@ -103,7 +137,21 @@ rainbow_snake_html = """
         <canvas id="gameCanvas" width="400" height="400"></canvas>
     </div>
     
-    <button id="restartBtn" class="btn-neon" onclick="resetGame()">RESTART</button>
+    <button id="restartBtn" class="btn-restart" onclick="resetGame()">TAP TO RESTART</button>
+
+    <div class="dpad">
+        <div class="empty"></div>
+        <div class="dpad-btn" id="padUp">▲</div>
+        <div class="empty"></div>
+        
+        <div class="dpad-btn" id="padLeft">◀</div>
+        <div class="empty" style="background:#030307; border-radius:50%; visibility:visible; opacity:0.1; border:1px solid #fff;"></div>
+        <div class="dpad-btn" id="padRight">▶</div>
+        
+        <div class="empty"></div>
+        <div class="dpad-btn" id="padDown">▼</div>
+        <div class="empty"></div>
+    </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
@@ -121,24 +169,19 @@ rainbow_snake_html = """
         let score = 0;
         let gameInterval;
         let gameOver = false;
-        
-        // This variable ticks up every frame to shift the color spectrum globally
-        let globalHueShift = 0; 
+        let globalHueShift = 0;
 
         function startGame() {
             gameOver = false;
             restartBtn.style.display = "none";
-            gameInterval = setInterval(update, 90);
+            gameInterval = setInterval(update, 110); // Slightly slower grid cycle to make touch maneuvering manageable
         }
 
         function update() {
             moveSnake();
             if (checkCollision()) { endGame(); return; }
             checkFoodConsumption();
-            
-            // Advance the color wheel cycle slightly every frame
-            globalHueShift = (globalHueShift + 2) % 360; 
-            
+            globalHueShift = (globalHueShift + 3) % 360;
             draw();
         }
 
@@ -177,41 +220,28 @@ rainbow_snake_html = """
             ctx.fillStyle = "#030307";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Food (White Core)
+            // Target Food Element
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(food.x * gridSize + 4, food.y * gridSize + 4, gridSize - 8, gridSize - 8);
 
-            // DRAW THE COLOR-CHANGING SNAKE
+            // Rendering Chameleon Skin
             snake.forEach((cell, index) => {
-                // Formula combines the frame time (globalHueShift) and body segment index
-                // This creates an animated "wave" of rainbow colors flowing down the body
                 let segmentHue = (globalHueShift + (index * 12)) % 360;
-                
-                // Use HSL color space: Hue (0-360), Saturation (100%), Lightness (60%)
                 ctx.fillStyle = `hsl(${segmentHue}, 100%, 60%)`;
-                
-                // Apply a glowing neon shadow matching the segment's current color
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = 6;
                 ctx.shadowColor = `hsl(${segmentHue}, 100%, 50%)`;
-                
-                let x = cell.x * gridSize + 1;
-                let y = cell.y * gridSize + 1;
-                let size = gridSize - 2;
-                ctx.fillRect(x, y, size, size);
+                ctx.fillRect(cell.x * gridSize + 1, cell.y * gridSize + 1, gridSize - 2, gridSize - 2);
             });
-            
-            // Turn off shadows so they don't drag down performance elsewhere
             ctx.shadowBlur = 0;
         }
 
         function endGame() {
             clearInterval(gameInterval);
             gameOver = true;
-            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.fillStyle = "rgba(0,0,0,0.85)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = "#fff";
-            ctx.font = "bold 30px 'Share Tech Mono'";
+            ctx.fillStyle = "#ff3366";
+            ctx.font = "bold 28px 'Share Tech Mono'";
             ctx.textAlign = "center";
             ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
             restartBtn.style.display = "block";
@@ -226,16 +256,29 @@ rainbow_snake_html = """
             startGame();
         }
 
-        window.addEventListener("keydown", e => {
+        // CONTROL LOGIC INTERFACE BINDING (Separated to safely map touch and keyboard events simultaneously)
+        function changeDirection(dir) {
             if (gameOver) return;
+            if (dir === "UP" && dy !== 1)    { dx = 0; dy = -1; }
+            if (dir === "DOWN" && dy !== -1) { dx = 0; dy = 1; }
+            if (dir === "LEFT" && dx !== 1)  { dx = -1; dy = 0; }
+            if (dir === "RIGHT" && dx !== -1) { dx = 1; dy = 0; }
+        }
+
+        // Physical Keyboard Fallback Listeners
+        window.addEventListener("keydown", e => {
             if(["Space", " ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
-            switch (e.key) {
-                case "ArrowUp": case "w": case "W": if (dy !== 1) { dx = 0; dy = -1; } break;
-                case "ArrowDown": case "s": case "S": if (dy !== -1) { dx = 0; dy = 1; } break;
-                case "ArrowLeft": case "a": case "A": if (dx !== 1) { dx = -1; dy = 0; } break;
-                case "ArrowRight": case "d": case "D": if (dx !== -1) { dx = 1; dy = 0; } break;
-            }
+            if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") changeDirection("UP");
+            if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") changeDirection("DOWN");
+            if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") changeDirection("LEFT");
+            if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") changeDirection("RIGHT");
         });
+
+        // Virtual On-Screen Button Mapping (Uses pointerdown to instantly track clicks/taps without 300ms mobile delay)
+        document.getElementById("padUp").addEventListener("pointerdown", () => changeDirection("UP"));
+        document.getElementById("padDown").addEventListener("pointerdown", () => changeDirection("DOWN"));
+        document.getElementById("padLeft").addEventListener("pointerdown", () => changeDirection("LEFT"));
+        document.getElementById("padRight").addEventListener("pointerdown", () => changeDirection("RIGHT"));
 
         startGame();
     </script>
@@ -243,7 +286,7 @@ rainbow_snake_html = """
 </html>
 """
 
-# Render framework
-st.markdown('<div class="cabinet-frame">', unsafe_allow_html=True)
-components.html(rainbow_snake_html, height=520)
+# Render framework adjusting frame size for both Canvas element + Control Grid array height
+st.markdown('<div class="mobile-container">', unsafe_allow_html=True)
+components.html(mobile_snake_html, height=560)
 st.markdown('</div>', unsafe_allow_html=True)
